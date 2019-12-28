@@ -1,4 +1,6 @@
-(ns genstyle.util)
+(ns genstyle.util
+  (:require [clojure.spec.alpha :as s]
+            [expound.alpha :as exp]))
 
 (defn ffilter [pred coll]
   (some #(when (pred %) %) coll))
@@ -25,3 +27,43 @@
         out))
     m
     keys+result-keys)))
+
+(defn project
+  ([f coll] (project {} f coll))
+  ([to f coll] (into to (map f) coll)))
+
+(defn project-as-keys
+  ([key-fn coll]
+   (project-as-keys {} key-fn coll))
+  ([to key-fn coll]
+   (project to (fn [x] [(key-fn x) x]) coll)))
+
+(defn throw-invalid [spec x]
+  (if-not (s/valid? spec x)
+    (throw (ex-info "Invalid value"
+                    {:value x
+                     :spec  spec
+                     :explain (exp/expound spec x)}))
+
+    x))
+
+(defn conform! [spec x]
+  (let [conformed (s/conform spec x)]
+    (if (= ::s/invalid conformed)
+      (throw (ex-info "Invalid value"
+                      {:value   x
+                       :spec    spec
+                       :explain (exp/expound spec x)}))
+      conformed)))
+
+(defmacro ascertain
+  "Like assert but returns the x if it evaluates to logical true"
+  ([x]
+   `(ascertain ~x "Ascertain failed"))
+  ([x msg]
+   `(let [ret# ~x]
+      (if-not ret#
+        (throw (ex-info ~msg
+                        {:x      '~&form
+                         :result ret#}))
+        ret#))))

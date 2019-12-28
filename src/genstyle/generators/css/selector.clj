@@ -1,15 +1,20 @@
-(ns genstyle.generators.css.class
+(ns genstyle.generators.css.selector
   (:require [clojure.spec.alpha :as s]
             [provisdom.spectomic.core :as sp]))
 
-(s/def ::name string?)
+(s/def ::selector string?)
 (s/def ::genotypes (s/coll-of map?))
 
 (s/def ::entity
-  (s/keys :req [::name]
+  (s/keys :req [::selector]
           :opt [::genotypes]))
 
 (def schema
   (sp/datomic-schema
-   [::name
+   [::selector
     [::genotypes {:db/isComponent true}]]))
+
+(defn make [{:keys [selector genotypes]}]
+  {::selector  selector
+   ::genotypes genotypes})
+

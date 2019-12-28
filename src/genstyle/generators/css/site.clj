@@ -1,18 +1,16 @@
 (ns genstyle.generators.css.site
   (:require [provisdom.spectomic.core :as sp]
             [clojure.spec.alpha :as s]
-            [genstyle.generators.css.class :as css-class]
-            [genstyle.generators.css.generation :as gen]))
+            [genstyle.generators.css.selector :as css-selector]
+            [datahike.api :as d]))
 
 (s/def ::name string?)
-(s/def ::generation map?)
-(s/def ::css-classes (s/coll-of ::css-class/entity))
+(s/def ::css-selectors (s/coll-of ::css-selector/entity))
 
-(s/def ::entity (s/keys :req [::name] :opt [::generation]))
+(s/def ::entity (s/keys :req [::name]))
 
 (def schema
- (sp/datomic-schema [[::name {:db/unique :db.unique/identity}]
-                     ::generation
-                     [::css-classes {:db/isComponent true}]]))
+  (sp/datomic-schema [[::name {:db/unique :db.unique/identity}]
+                      [::css-selectors {:db/isComponent true}]]))
 
 

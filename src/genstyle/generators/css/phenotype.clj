@@ -2,12 +2,13 @@
   (:require [genstyle.generators.css.genotype :as gt]
             [genstyle.generators.css.genotype.util :as gu]
             [clojure.spec.alpha :as s]
-            [provisdom.spectomic.core :as sp]))
+            [provisdom.spectomic.core :as sp]
+            [genstyle.util :as u]))
 
 (s/def ::value__str string?)
 (s/def ::rank int?)
+(s/def ::generation int?)
 (s/def ::genotype map?)
-(s/def ::generation map?)
 
 (s/def ::entity
   (s/keys :req [::value__str
@@ -18,9 +19,27 @@
 (def schema
   (sp/datomic-schema
    [::value__str
-    ::genotype
-    ::generation
-    ::rank]))
+    [::genotype {:db/isComponent true}]
+    [::generation {:db/valueType :db.type/long}]
+    [::rank {:db/valueType :db.type/long}]]))
+
+(def encode-key-mappings
+  [[::value ::value__str]])
+
+(def decode-key-mappings
+  (mapv (comp vec reverse) encode-key-mappings))
+
+(def encode-vals
+  (u/rename-update-keys
+   {:keys+result-keys encode-key-mappings
+    :dissoc-keys?     true
+    :f                pr-str}))
+
+(def decode-vals
+  (u/rename-update-keys
+   {:keys+result-keys decode-key-mappings
+    :dissoc-keys?     true
+    :f                read-string}))
 
 
 (defn asym
@@ -101,3 +120,60 @@
 (defmethod vary-val-multi :color
   [gt pt]
   (vary-int-ranges gt pt))
+
+(defn- format-color [{::gt/keys [value-type]} {value ::value}]
+  (apply format
+         (case value-type
+           :rgb "rgb(%d, %d, %d)"
+           :hsl "hsl(%d, %d%%, %d%%)")
+         value))
+
+(defn css-format [{::gt/keys [value-unit]} val]
+  (str val (name value-unit)))
+
+(defmulti format-val-multi ::gt/attribute)
+
+(defmethod format-val-multi :background
+  [gt pt]
+  (format-color gt pt))
+
+(defmethod format-val-multi :color
+  [gt pt]
+  (format-color gt pt))
+
+(defmethod format-val-multi :border-style
+  [gt {value ::value}]
+  value)
+
+(defmethod format-val-multi :font-family
+  [gt {value ::value}]
+  value)
+
+(defmethod format-val-multi :font-weight
+  [gt {value ::value}]
+  value)
+
+(defmethod format-val-multi :font-size
+  [gt {value ::value}]
+  (css-format gt value))
+
+(defmethod format-val-multi :padding
+  [gt {value ::value}]
+  (css-format gt value))
+
+(defmethod format-val-multi :margin
+  [gt {value ::value}]
+  (css-format gt value))
+
+(defmethod format-val-multi :border-width
+  [gt {value ::value}]
+  (css-format gt value))
+
+(defmethod format-val-multi :border-radius
+  [gt {value ::value}]
+  (css-format gt value))
+
+(defmethod format-val-multi :default
+  [cgt pt]
+  (println :format-val-default-for cgt pt)
+  (::value pt))

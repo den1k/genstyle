@@ -11,6 +11,20 @@
 (s/def ::value-range__str string?)
 (s/def ::value-ranges__str string?)
 
+(s/def ::possible-values (s/coll-of some?))
+(s/def ::value-range (s/or :range (s/tuple int? int?)
+                           :constant (s/tuple #{:constant :initial} int?)))
+(s/def ::value-ranges (s/coll-of ::value-range))
+
+(s/def ::make
+  (s/keys :req [::attribute]
+          :opt [::value-type
+                ::value-unit
+                ::value-variability
+                ::possible-values
+                ::value-range
+                ::value-ranges]))
+
 (s/def ::entity
   (s/keys :req [::attribute]
           :opt [::value-type
@@ -73,12 +87,13 @@
     :dissoc-keys?     true
     :f                read-string}))
 
-
-
+(defn make [m]
+  (-> (u/throw-invalid ::make m)
+      encode-vals))
 
 (def initial-genotypes
   (mapv
-   encode-vals
+   make
    [{::attribute       :border-style
      ::possible-values ["none" "hidden" "dotted" "dashed" "solid" "double" "groove" "ridge" "inset" "outset"]}
     {::attribute       :font-family

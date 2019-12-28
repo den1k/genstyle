@@ -3,7 +3,7 @@
             [genstyle.generators.css.phenotype :as pt]
             [genstyle.generators.css.generation :as ggen]
             [genstyle.generators.css.site :as site]
-            [genstyle.generators.css.class :as css-class]
+            [genstyle.generators.css.selector :as css-selector]
             [datahike.api :as d]
             [clojure.java.io :as io]))
 
@@ -12,7 +12,7 @@
    []
    cat
    [site/schema
-    css-class/schema
+    css-selector/schema
     ggen/schema
     gt/schema
     pt/schema]))

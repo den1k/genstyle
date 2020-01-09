@@ -1,6 +1,9 @@
 (ns genstyle.util
   (:require [clojure.spec.alpha :as s]
-            [expound.alpha :as exp]))
+            [expound.alpha :as exp]
+            [net.cgrand.xforms :as x])
+  (:refer-clojure :exclude [inst-ms])
+  (:import (java.util Date)))
 
 (defn ffilter [pred coll]
   (some #(when (pred %) %) coll))
@@ -38,11 +41,19 @@
   ([to key-fn coll]
    (project to (fn [x] [(key-fn x) x]) coll)))
 
+(defn rand-nths-by [f coll]
+  (->> coll
+       (group-by f)
+       (reduce-kv
+        (fn [out _ vs]
+          (conj out (rand-nth vs)))
+        [])))
+
 (defn throw-invalid [spec x]
   (if-not (s/valid? spec x)
     (throw (ex-info "Invalid value"
-                    {:value x
-                     :spec  spec
+                    {:value   x
+                     :spec    spec
                      :explain (exp/expound spec x)}))
 
     x))
@@ -57,13 +68,22 @@
       conformed)))
 
 (defmacro ascertain
-  "Like assert but returns the x if it evaluates to logical true"
-  ([x]
-   `(ascertain ~x "Ascertain failed"))
-  ([x msg]
-   `(let [ret# ~x]
+  "Like assert but returns `expr` if it evaluates to logical true"
+  ([expr]
+   `(ascertain ~expr "Ascertain failed"))
+  ([expr msg]
+   `(let [ret# ~expr]
       (if-not ret#
         (throw (ex-info ~msg
-                        {:x      '~&form
+                        {:expr   '~expr
                          :result ret#}))
         ret#))))
+
+(defn inst []
+  (Date.))
+
+(defn inst-ms []
+  (clojure.core/inst-ms (inst)))
+
+(defn rand-long [n]
+  (long (rand-int n)))

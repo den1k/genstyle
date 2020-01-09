@@ -6,22 +6,19 @@
             [genstyle.util :as u]))
 
 (s/def ::value__str string?)
-(s/def ::rank int?)
 (s/def ::generation int?)
 (s/def ::genotype map?)
 
 (s/def ::entity
   (s/keys :req [::value__str
                 ::genotype
-                ::generation
-                ::rank]))
+                ::generation]))
 
 (def schema
   (sp/datomic-schema
    [::value__str
-    [::genotype {:db/isComponent true}]
-    [::generation {:db/valueType :db.type/long}]
-    [::rank {:db/valueType :db.type/long}]]))
+    ::genotype
+    [::generation {:db/valueType :db.type/long}]]))
 
 (def encode-key-mappings
   [[::value ::value__str]])

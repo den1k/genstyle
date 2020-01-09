@@ -1,9 +1,11 @@
 (ns genstyle.db
   (:require [datahike.api :as d]
+            [datahike.impl.entity :as de]
             [clojure.java.io :as io]
             [genstyle.db.schema :refer [schema]]
             [mount.core :as mount :refer [defstate]]
-            [genstyle.util :as u]))
+            [genstyle.util :as u])
+  (:import (datahike.impl.entity Entity)))
 
 (defn- ensure-db-input [inputs]
   (if-let [[i] inputs]
@@ -77,8 +79,12 @@
   (let [eid (->eid ent-or-eid)]
     (d/entity (d/db conn) eid)))
 
-(defn entity->map [entity]
-  (->> entity doall (into {})))
+(declare entity?)
+
+(defn entity->map [ent]
+  (cond-> ent
+    (entity? ent) (->> doall (into {:db/id (:db/id ent)}))))
+
 
 (defn entity->ref [{:as ent :keys [id]}]
   (assert id (str "Entity " ent " should have a :db/id."))
@@ -118,31 +124,78 @@
 (defn tempid []
   (d/tempid nil))
 
-(def entity? datahike.impl.entity/entity?)
+(defn with-tempid [ent]
+  (cond-> ent (nil? (:db/id ent)) (assoc :db/id (tempid))))
+
+(defn with
+  ([tx-data]
+   (with @conn tx-data))
+  ([db tx-data]
+   (d/with db tx-data)))
+
+(defn transact->entity
+  "Transacts and returns a single entity as a db entity.
+  Two-arity version takes a tx-fn which can be `with` for speculative updates
+  on an immutable DB."
+  ([ent] (transact->entity transact ent))
+  ([tx-fn ent]
+   (let [{:as ent id :db/id} (with-tempid ent)
+         {:keys [tempids db-after]} (tx-fn [ent])]
+     (d/entity db-after (get tempids id)))))
+
+(def entity? de/entity?)
+
+(defn ->ref [ent]
+  (u/ascertain (:db/id ent) "Must have :db/id to make ref"))
+
+(defn ->refs [ents]
+  (mapv ->ref ents))
+
+(def touch-entity de/touch)
+
+;; *** Helpers
 
 (defn compact
   "Helper function for REPL printing that removes namespaces from qualified
-  keywords."
+  keywords in collections."
   [x]
   (clojure.walk/postwalk
-   #(if (keyword? %)
-      (keyword (name %))
-      %)
+   (fn [x]
+     (cond-> x
+       (keyword? x) (-> name keyword)))
    x))
+
+(defn compact-entity
+  "Helper function for REPL printing that removes namespaces from qualified
+  keywords in collections."
+  [x]
+  (clojure.walk/prewalk
+   (fn [x]
+     (cond-> x
+       (entity? x) entity->map
+       (keyword? x) (-> name keyword)))
+   x))
+
+;; REBL
+(extend-protocol clojure.core.protocols/Datafiable
+  Entity
+  (datafy [this]
+    (-> this compact-entity)))
 
 
 (comment
  ;; use
  (mount/start)
+ (mount/stop)
  (mount/stop conn)
  (mount/running-states)
 
  ;; init
-
- (d/create-database uri)
-
  (do
-   ;(def conn (d/connect uri))
+   (mount/stop)
+   (d/delete-database uri)
+   (d/create-database uri)
+   (mount/start)
    (d/transact conn schema)
    (d/transact conn genstyle.generators.css.genotype/initial-genotypes)
    )

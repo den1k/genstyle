@@ -3,6 +3,8 @@
             [genstyle.generators.css.phenotype :as pt]
             [genstyle.generators.css.generation :as ggen]
             [genstyle.generators.css.site :as site]
+            [genstyle.generators.css.site.style :as site.style]
+            [genstyle.generators.css.site.instance :as site.instance]
             [genstyle.generators.css.selector :as css-selector]
             [datahike.api :as d]
             [clojure.java.io :as io]))
@@ -12,6 +14,8 @@
    []
    cat
    [site/schema
+    site.style/schema
+    site.instance/schema
     css-selector/schema
     ggen/schema
     gt/schema
@@ -35,6 +39,5 @@
    (d/delete-database uri))
 
  )
-
 
 

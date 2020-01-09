@@ -3,8 +3,7 @@
 
  :deps
  {org.clojure/clojure    {:mvn/version "1.10.1"}
-  clojure.spec-alpha2    {:git/url "https://github.com/clojure/spec-alpha2.git"
-                          :sha     "9dc3344bfe6d13213bdb15ca2e7680cd8eb439e3"}
+
   provisdom/spectomic    {:git/url "https://github.com/Provisdom/spectomic"
                           :sha     "69ebaedb8d2cfa45170fb06e950b592b607b975e"}
   expound                {:mvn/version "0.8.2"}
@@ -15,10 +14,19 @@
 
   clj-commons/cljss      {:mvn/version "1.6.4"}
   garden                 {:mvn/version "1.3.9"}
-  io.replikativ/datahike {:mvn/version "0.2.0"}}
+  io.replikativ/datahike {:mvn/version "0.2.0"}
+  net.cgrand/xforms      {:mvn/version "0.19.2"}}
 
  :aliases
- {:test {:extra-paths ["test"]
+ {:rebl {:extra-deps {com.cognitect/rebl          {:local/root "../REBL-0.9.220/REBL-0.9.220.jar"}
+                      org.clojure/core.async      {:mvn/version "0.4.490"}
+                      org.openjfx/javafx-fxml     {:mvn/version "11.0.1"}
+                      org.openjfx/javafx-controls {:mvn/version "11.0.1"}
+                      org.openjfx/javafx-swing    {:mvn/version "11.0.1"}
+                      org.openjfx/javafx-base     {:mvn/version "11.0.1"}
+                      org.openjfx/javafx-web      {:mvn/version "11.0.1"}}
+         :main-opts  ["-m" "cognitect.rebl"]}
+  :test {:extra-paths ["test"]
          :extra-deps  {org.clojure/test.check {:mvn/version "0.10.0"}}}
   :runner
         {:extra-deps {com.cognitect/test-runner

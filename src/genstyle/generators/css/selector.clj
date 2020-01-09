@@ -12,7 +12,7 @@
 (def schema
   (sp/datomic-schema
    [::selector
-    [::genotypes {:db/isComponent true}]]))
+    ::genotypes]))
 
 (defn make [{:keys [selector genotypes]}]
   {::selector  selector

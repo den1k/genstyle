@@ -6,6 +6,7 @@
             [genstyle.generators.css.site.style :as site.style]
             [genstyle.generators.css.site.instance :as site.instance]
             [genstyle.generators.css.selector :as css-selector]
+            [genstyle.generators.css.population :as population]
             [datahike.api :as d]
             [clojure.java.io :as io]))
 
@@ -16,6 +17,7 @@
    [site/schema
     site.style/schema
     site.instance/schema
+    population/schema
     css-selector/schema
     ggen/schema
     gt/schema

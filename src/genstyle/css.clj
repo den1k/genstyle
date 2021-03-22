@@ -4,6 +4,7 @@
             [genstyle.generators.css.generation :as ggen]
             [genstyle.generators.css.site :as site]
             [genstyle.generators.css.site.instance :as site.instance]
+            [genstyle.generators.css.population :as population]
             [genstyle.generators.css.site.style :as site.style]
             [genstyle.generators.css.selector :as css-selector]
             [genstyle.db :as db]
@@ -146,7 +147,9 @@
     [(site/make
       {::site/name          name
        ::site/css-selectors selector-ents
-       ::site/population    (db/->refs instances)
+       ::site/population    (population/make
+                             {::population/site      [::site/name name]
+                              ::population/instances (db/->refs instances)})
        ::site/instances     instances})]))
 
 (comment
@@ -232,9 +235,8 @@
               (take instance-n))
         (repeatedly wheel))))))
 
-;; IMPL FROM
+;; IMPL inspired by
 ;; https://natureofcode.com/book/chapter-9-the-evolution-of-code/
-;(:db/id (ensure-site-ent app-name))
 
 (defn parents->child-instance [parents]
   (let [selector->selector-ent
@@ -297,50 +299,25 @@
     - a `birth-rate` of 1 per instance, resulting in a generation-size equal to
       the current instance count."
   (let [{::site/keys [population]} site
-        pop-count      (->> population count)
+        pop-instances  (::population/instances population)
+        pop-count      (count pop-instances)
         next-pop-count (* birth-rate pop-count)
         parent-groups  (take next-pop-count
                              ;; selection
                              (instances->mates-wheel-of-fortune parent-n
-                                                                population))]
+                                                                pop-instances))]
     (mapv parents->child-instance parent-groups)))
 
 (defn next-generation!
   [{:as opts :keys [site]}]
   (let [site-id  (:db/id site)
         next-gen (next-generation opts)]
-    (db/transact (into [[:db.fn/retractAttribute site-id ::site/population]]
-                       [{:db/id            site-id
-                         ::site/population next-gen
-                         ::site/instances  (db/->refs next-gen)}]))))
+    (db/transact [{:db/id            site-id
+                   ::site/population (population/make
+                                      {::population/site      site-id
+                                       ::population/instances next-gen})
+                   ::site/instances  (db/->refs next-gen)}])))
 
-(comment
- (def site-before (ensure-site-ent app-name))
- (->> site-before ::site/population (mapv :db/id))
- ; => [55 54 48 50 56 51 57 53 52 49]
- (->> site-before ::site/instances (mapv :db/id))
- ; => [55 54 48 50 56 51 57 53 52 49]
-
- (do (next-generation! {:site (ensure-site-ent app-name)})
-     nil)
- (let [{:as site-ent site-id :db/id} (ensure-site-ent app-name)
-       next-gen (next-generation {:site site-ent})]
-   (println :next-gen-ids (mapv :db/id next-gen))
-
-   (do (db/transact (into [[:db.fn/retractAttribute site-id ::site/population]]
-                          [{::site/name       app-name
-                            ::site/population next-gen
-                            ::site/instances  (db/->refs next-gen)}]))
-       nil))
-
- (def site-after (ensure-site-ent app-name))
- (= (->> site-after ::site/population (mapv :db/id))
-    (->> site-after ::site/instances (mapv :db/id))))
-
-
-
-;; selection
-;; crossover: pair with other successful
 ;; mutation
 ;(defn select)
 
@@ -401,8 +378,17 @@
                  :instance-created-at instance-crt}))
              "*/\n"
              (site-instance->css instance)))]
-    (mapv instance-css-with-meta-comment population)))
+    (mapv instance-css-with-meta-comment (::population/instances population))))
 
 (comment
+ (next-generation! {:site (db/entity app-ref)})
  (site-population->stylesheets (db/entity app-ref))
+ )
+
+
+(comment
+
+ ;; all populations that ever existed on a site
+ (->> (::population/_site (db/entity app-ref))
+      (sort-by ::population/created-at))
  )

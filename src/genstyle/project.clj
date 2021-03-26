@@ -13,7 +13,6 @@
     :keys [name]}]
   (make name (style/make-css-generation opts)))
 
-
 (comment
   (make-css-project
     {:name            "my project"

@@ -25,8 +25,11 @@
     (repeatedly generation-size #(make-css opts-with-gen)))
   )
 
+(defn ent->gen [style-ent]
+  (-> style-ent ::gen/_styles first))
+
 (defn ent->gen-name [style-ent]
-  (-> style-ent ::gen/_styles first ::gen/name))
+  (-> style-ent ent->gen ::gen/name))
 
 (comment
   (keys (first (make-css-generation {:selector->props {"sdsd" ["color"]}}))))

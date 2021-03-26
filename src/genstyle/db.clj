@@ -49,12 +49,17 @@
 (defn entity [eid]
   (some-> (d/entity @conn eid) d/touch))
 
+(defn q [query & inputs]
+  (apply d/q query @conn inputs))
+
 (def touch d/touch)
 
 (defn wipe-db! []
   (mount/stop #'conn)
   (u/delete-directory-recursive db-path)
-  (mount/start #'conn))
-(comment
+  (mount/start #'conn)
+  :wiped-db!)
 
+(comment
+  (wipe-db!)
   )

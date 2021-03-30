@@ -14,6 +14,17 @@
   ([to key-fn coll]
    (project to (fn [x] [(key-fn x) x]) coll)))
 
+(defn group-by-map
+  "Like group-by but also maps over the grouped elems"
+  ([keyf coll] (group-by-map keyf identity coll))
+  ([keyf valf coll]
+   (persistent!
+     (reduce
+       (fn [ret x]
+         (let [k (keyf x)]
+           (assoc! ret k (conj (get ret k []) (valf x)))))
+       (transient {}) coll))))
+
 (defn bound [num lower-bound upper-bound]
   (cond
     (<= lower-bound num upper-bound) num
@@ -83,7 +94,10 @@
        (name-gen exists?)
        nm))))
 
-(comment (name-gen))
+(comment (name-gen)
+         (* (count @adjectives) (count @names))
+         ;; => 51312 possibilities
+         )
 
 (defn date-instant []
   (Date.))

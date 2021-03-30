@@ -3,14 +3,14 @@
   (:require [genstyle.generation :as gen]
             [genstyle.css.ruleset :as ruleset]
             [genstyle.util :as u]
-            [genstyle.db.util :as dbu]))
+            [genstyle.db :as db]))
 
 (defn make
   [{:keys [generation genes]}]
-  (dbu/with-timestamps
-   {::gen/_styles generation
-    ::fitness     0
-    ::genes       genes}))
+  (db/with-timestamps
+    {::gen/_styles generation
+     ::fitness     0
+     ::genes       genes}))
 
 (defn make-css
   [{:as opts :keys [selector->props]}]
@@ -33,5 +33,3 @@
 
 (comment
   (keys (first (make-css-generation {:selector->props {"sdsd" ["color"]}}))))
-
-;(gen/make {})

@@ -1,6 +1,7 @@
 (ns genstyle.css.property.val-instance
   (:require [genstyle.eval :as eval]
-            [genstyle.util :as u])
+            [genstyle.util :as u]
+            [genstyle.db :as db])
   )
 
 
@@ -147,11 +148,11 @@
 (defmethod gen-instance* :css/flex-grow
   [_]
   {#_#_::valuef '(fn [state]
-               (u/mustache-replace
-                 "{{number}}px"
-                 state))
-   ::state  (eval/eval-form
-              '{:number (rand-int 10)})})
+                   (u/mustache-replace
+                     "{{number}}px"
+                     state))
+   ::state (eval/eval-form
+             '{:number (rand-int 10)})})
 
 (def ^:private css-pixel-value
   {::kind   :css/pixel-value
@@ -195,8 +196,17 @@
 (defn make [opts]
   ;(println opts)
   (-> (gen-instance* opts)
-      (update ::iteration (fnil inc 0))
-      set-value)
+      (assoc ::iteration 1)
+      set-value
+      db/with-timestamps)
+  )
+
+(defn clone [val-instance]
+  ;(println opts)
+  (-> (into {} val-instance)
+      (dissoc :created-at)
+      (assoc ::iteration 1)
+      db/with-timestamps)
   )
 
 (comment
@@ -209,7 +219,8 @@
   (-> instance
       (update ::state #(eval/eval-form (list mutf %)))
       (update ::iteration inc)
-      set-value)
+      set-value
+      db/with-timestamps)
   )
 
 

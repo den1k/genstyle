@@ -2,7 +2,8 @@
   (:require
     [mount.core :as mount :refer [defstate]]
     [datalevin.core :as d]
-    [genstyle.util :as u]))
+    [genstyle.util :as u]
+    [datalevin.impl.entity :as de]))
 
 (def schema
   {
@@ -47,6 +48,38 @@
   ([txs meta]
    (d/transact! conn txs meta)
    nil))
+
+
+
+(defn make-transact-entity [{:keys [idk->gen]}]
+  (let [idks (set (keys idk->gen))]
+    (fn transact-entity!
+      ([ent-map] (transact-entity! conn [] ent-map))
+      ([conn ent-map] (transact-entity! conn [] ent-map))
+      ;; could use schema to figure out unique identity keys if there is no db/id
+      ;; throw otherwise
+      ([conn txs ent-map]
+       (let [tempid -1
+             [idk id] (some #(find ent-map %) idks)
+             inst   (u/date-instant)
+             eid    (or (when id [idk id]) (:db/id ent-map))
+             {:keys [created-at] db-id :db/id} (some->> eid (d/entity @conn))
+             {:keys [db-after tempids]} (->> txs
+                                             (into [(cond-> (assoc ent-map
+                                                              :db/id (or db-id tempid)
+                                                              :created-at (or created-at inst)
+                                                              :updated-at inst)
+                                                      idk (assoc idk (or id ((get idk->gen idk))))
+                                                      )])
+                                             (d/transact! conn))
+             eid    (or db-id (get tempids tempid))]
+         (d/touch (d/entity db-after eid)))))))
+
+(def transact-entity! (make-transact-entity {:idk->gen {}}))
+
+(defn entity->map [ent]
+  (when (de/entity? ent)
+    (into {:db/id (:db/id ent)} ent)))
 
 (defn entity [eid]
   (some-> (d/entity @conn eid) d/touch))

@@ -52,6 +52,9 @@
   ([fn-map m]
    ((fn-map->transform fn-map) m)))
 
+(defn ffilter [pred coll]
+  (some #(when (pred %) %) coll))
+
 (defn wrap
   ([around]
    (fn [s]

@@ -46,13 +46,15 @@
   (db/entity [::name name]))
 
 (defn alpha-styles [proj-name]
-  (let [{::keys [population]} (name->ent proj-name)]
+  (let [{::keys [population]} (entity proj-name)]
     (sequence
       (comp (remove #(= (::style/fitness %) 0))
             (x/sort-by ::style/fitness >))
       population)))
 
 (defn mate-css-project
+  "Returns project with a new generation of styles mated from the fittest styles of either
+   the most recent or provided generation. See opts."
   [{:as          opts
     project-name :name
     :keys        [generation-size min-fitness generation-name]
@@ -74,8 +76,7 @@
                                [?decls ::decl/prop ?prop]
                                [(ef ?decls) ?decl]]
                              genstyle.db/entity min-fitness project-name gen-eid)
-          gen-ent          (assoc (gen/make opts)
-                             :parents [gen-eid])
+          gen-ent          (assoc (gen/make opts) :parents [gen-eid])
           grouped-rulesets (u/group-by-map :sel :decl res)
           select-genes     (fn []
                              (map (fn [[sel decls]]

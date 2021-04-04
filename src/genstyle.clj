@@ -78,7 +78,7 @@
 
                        }})
 
-  (mate-css-project! {:name "genstyle-landing"
+  (mate-css-project! {:name            "genstyle-landing"
                       :generation-name "GEN_Triumphant-Tyler"}))
 
 (defn style->route [style-ent]
@@ -146,7 +146,11 @@
     [:html
      [:meta {:charset "UTF-8"}]
      [:head
-      [:style (stylesheet/from-style style)]]
+      [:style
+       {:data-style-id           (:db/id style)
+        :data-project            (style/ent->project-name style)
+        :data-generation         (style/ent->gen-name style)
+        :dangerouslySetInnerHTML {:__html (stylesheet/from-style style)}}]]
      [:body
       (when thumbnail {:style {:zoom :30%}})
       [landing/view]]]))
@@ -157,14 +161,13 @@
    :body    html})
 
 (defn hiccup-response [body-html]
-  {:status  200
-   :headers {"content-type" "text/html"}
-   :body    (uix.dom/render-to-static-markup
-              [:html
-               [:meta {:charset "UTF-8"}]
-               [:head
-                [:link {:rel "stylesheet" :href "/css/tachyons.css"}]]
-               [:body body-html]])})
+  (html-response
+    (uix.dom/render-to-static-markup
+      [:html
+       [:meta {:charset "UTF-8"}]
+       [:head
+        [:link {:rel "stylesheet" :href "/css/tachyons.css"}]]
+       [:body body-html]])))
 
 (def router
   (r.ring/router

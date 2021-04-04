@@ -31,5 +31,12 @@
 (defn ent->gen-name [style-ent]
   (-> style-ent ent->gen ::gen/name))
 
+(defn ent->project [style-ent]
+  (-> style-ent :genstyle.project/_population first))
+
+(defn ent->project-name [style-ent]
+  (-> style-ent ent->project :genstyle.project/name))
+
+
 (comment
   (keys (first (make-css-generation {:selector->props {"sdsd" ["color"]}}))))
